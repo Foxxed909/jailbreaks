@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jailbreak ASR Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #e0e0e0;
+    --muted: #888;
+    --accent: #7c3aed;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --danger: #dc2626;
+    --font: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 { font-size: 15px; color: var(--accent); letter-spacing: 0.1em; }
+  header span { color: var(--muted); font-size: 11px; }
+
+  .main { padding: 24px; display: grid; gap: 20px; }
+
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .card h2 {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+
+  .stat { font-size: 28px; color: var(--accent); font-weight: bold; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .chart-card h2 {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  canvas { max-height: 240px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th {
+    text-align: left;
+    padding: 8px;
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td { padding: 8px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(124,58,237,0.05); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-success { background: rgba(22,163,74,0.2); color: #4ade80; }
+  .badge-danger { background: rgba(220,38,38,0.2); color: #f87171; }
+  .badge-warning { background: rgba(202,138,4,0.2); color: #fbbf24; }
+
+  .bar-container { background: var(--border); border-radius: 2px; height: 6px; }
+  .bar-fill { height: 6px; border-radius: 2px; background: var(--accent); }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .upload-zone:hover { border-color: var(--accent); }
+  .upload-zone p { color: var(--muted); font-size: 12px; }
+  .upload-zone .icon { font-size: 24px; margin-bottom: 8px; }
+
+  #file-input { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>// JAILBREAK ASR DASHBOARD</h1>
+  <span id="last-updated">no data loaded</span>
+</header>
+
+<div class="main">
+
+  <!-- Upload zone -->
+  <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+    <div class="icon">📂</div>
+    <p>Drop eval_results/*.jsonl here or click to load</p>
+    <p style="font-size:10px;margin-top:4px;">Output from tools/eval_pipeline.py</p>
+  </div>
+  <input type="file" id="file-input" accept=".jsonl,.json" multiple>
+
+  <!-- Stats row -->
+  <div class="row" id="stats-row" style="display:none;">
+    <div class="card">
+      <h2>Overall ASR</h2>
+      <div class="stat" id="overall-asr">--</div>
+      <div class="stat-sub" id="overall-sub">across all techniques and models</div>
+    </div>
+    <div class="card">
+      <h2>Total Trials</h2>
+      <div class="stat" id="total-trials">--</div>
+      <div class="stat-sub">prompts evaluated</div>
+    </div>
+    <div class="card">
+      <h2>Best Technique</h2>
+      <div class="stat" id="best-technique" style="font-size:18px;">--</div>
+      <div class="stat-sub" id="best-technique-asr">--</div>
+    </div>
+    <div class="card">
+      <h2>Most Vulnerable Model</h2>
+      <div class="stat" id="best-model" style="font-size:18px;">--</div>
+      <div class="stat-sub" id="best-model-asr">--</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="row" id="charts-row" style="display:none;">
+    <div class="chart-card">
+      <h2>ASR by Technique</h2>
+      <canvas id="technique-chart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>ASR by Model</h2>
+      <canvas id="model-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Technique x Model matrix -->
+  <div class="chart-card" id="matrix-card" style="display:none;">
+    <h2>Technique × Model ASR Matrix</h2>
+    <div style="overflow-x:auto;">
+      <table id="matrix-table"></table>
+    </div>
+  </div>
+
+  <!-- Raw results table -->
+  <div class="chart-card" id="results-card" style="display:none;">
+    <h2>Recent Results</h2>
+    <div style="overflow-x:auto;">
+      <table id="results-table"></table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let allResults = [];
+let techniqueChart = null;
+let modelChart = null;
+
+const COLORS = [
+  '#7c3aed','#2563eb','#059669','#d97706','#dc2626',
+  '#7c3aed88','#2563eb88','#05966988'
+];
+
+// Load file
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  allResults = [];
+  for (const file of files) {
+    const text = await file.text();
+    const lines = text.trim().split('\n').filter(Boolean);
+    for (const line of lines) {
+      try { allResults.push(JSON.parse(line)); } catch {}
+    }
+  }
+  if (allResults.length) render(allResults);
+});
+
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const k = item[key] || 'unknown';
+    if (!acc[k]) acc[k] = [];
+    acc[k].push(item);
+    return acc;
+  }, {});
+}
+
+function asr(group) {
+  if (!group.length) return 0;
+  return group.filter(r => r.success).length / group.length;
+}
+
+function pct(v) { return (v * 100).toFixed(1) + '%'; }
+
+function badgeClass(v) {
+  if (v >= 0.6) return 'badge-danger';
+  if (v >= 0.3) return 'badge-warning';
+  return 'badge-success';
+}
+
+function render(results) {
+  document.getElementById('last-updated').textContent =
+    `${results.length} results loaded`;
+
+  // Show sections
+  ['stats-row','charts-row','matrix-card','results-card'].forEach(id => {
+    document.getElementById(id).style.display = '';
+  });
+
+  const byTechnique = groupBy(results, 'technique');
+  const byModel = groupBy(results, 'model');
+
+  // Stats
+  const overallAsr = asr(results);
+  document.getElementById('overall-asr').textContent = pct(overallAsr);
+  document.getElementById('total-trials').textContent = results.length.toLocaleString();
+
+  const techAsrs = Object.entries(byTechnique).map(([t,g]) => [t, asr(g)]);
+  const [bestTech, bestTechAsr] = techAsrs.sort((a,b) => b[1]-a[1])[0] || ['--', 0];
+  document.getElementById('best-technique').textContent = bestTech;
+  document.getElementById('best-technique-asr').textContent = pct(bestTechAsr) + ' ASR';
+
+  const modelAsrs = Object.entries(byModel).map(([m,g]) => [m, asr(g)]);
+  const [bestModel, bestModelAsr] = modelAsrs.sort((a,b) => b[1]-a[1])[0] || ['--', 0];
+  document.getElementById('best-model').textContent = bestModel;
+  document.getElementById('best-model-asr').textContent = pct(bestModelAsr) + ' ASR';
+
+  // Technique chart
+  const techLabels = techAsrs.map(([t]) => t);
+  const techVals = techAsrs.map(([,v]) => +(v*100).toFixed(1));
+
+  if (techniqueChart) techniqueChart.destroy();
+  techniqueChart = new Chart(document.getElementById('technique-chart'), {
+    type: 'bar',
+    data: {
+      labels: techLabels,
+      datasets: [{ label: 'ASR %', data: techVals, backgroundColor: COLORS }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { max: 100, ticks: { color: '#888' }, grid: { color: '#2a2a2a' } },
+        x: { ticks: { color: '#888' }, grid: { color: '#2a2a2a' } }
+      }
+    }
+  });
+
+  // Model chart
+  const modelLabels = modelAsrs.map(([m]) => m);
+  const modelVals = modelAsrs.map(([,v]) => +(v*100).toFixed(1));
+
+  if (modelChart) modelChart.destroy();
+  modelChart = new Chart(document.getElementById('model-chart'), {
+    type: 'bar',
+    data: {
+      labels: modelLabels,
+      datasets: [{ label: 'ASR %', data: modelVals, backgroundColor: COLORS }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { max: 100, ticks: { color: '#888' }, grid: { color: '#2a2a2a' } },
+        x: { ticks: { color: '#888' }, grid: { color: '#2a2a2a' } }
+      }
+    }
+  });
+
+  // Matrix
+  const techniques = Object.keys(byTechnique);
+  const models = Object.keys(byModel);
+
+  let matrixHtml = '<thead><tr><th>Technique</th>';
+  models.forEach(m => matrixHtml += `<th>${m}</th>`);
+  matrixHtml += '</tr></thead><tbody>';
+
+  techniques.forEach(tech => {
+    matrixHtml += `<tr><td>${tech}</td>`;
+    models.forEach(model => {
+      const group = results.filter(r => r.technique === tech && r.model === model);
+      if (!group.length) { matrixHtml += '<td><span style="color:#555">--</span></td>'; return; }
+      const v = asr(group);
+      matrixHtml += `<td>
+        <span class="badge ${badgeClass(v)}">${pct(v)}</span>
+      </td>`;
+    });
+    matrixHtml += '</tr>';
+  });
+  matrixHtml += '</tbody>';
+  document.getElementById('matrix-table').innerHTML = matrixHtml;
+
+  // Results table (last 50)
+  const recent = [...results].reverse().slice(0, 50);
+  let tableHtml = `<thead><tr>
+    <th>Timestamp</th><th>Technique</th><th>Model</th>
+    <th>Semantic</th><th>Result</th><th>Preview</th>
+  </tr></thead><tbody>`;
+
+  recent.forEach(r => {
+    const ts = r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') : '--';
+    const sem = r.scores?.semantic?.toFixed(2) ?? r.semantic_score?.toFixed(2) ?? '--';
+    const success = r.success;
+    const preview = (r.response_preview || '').slice(0, 60).replace(/</g,'&lt;');
+    tableHtml += `<tr>
+      <td style="color:#555">${ts}</td>
+      <td>${r.technique || '--'}</td>
+      <td>${r.model || '--'}</td>
+      <td>${sem}</td>
+      <td><span class="badge ${success ? 'badge-danger' : 'badge-success'}">
+        ${success ? 'SUCCESS' : 'REFUSED'}
+      </span></td>
+      <td style="color:#555;font-size:11px;">${preview}</td>
+    </tr>`;
+  });
+  tableHtml += '</tbody>';
+  document.getElementById('results-table').innerHTML = tableHtml;
+}
+</script>
+</body>
+</html>
