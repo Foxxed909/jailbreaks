@@ -1,52 +1,92 @@
-# Persona Jailbreak Systems
+# Persona Suite — Master Index
 
-Full system prompt personas. Each one establishes an alternative identity that reframes the model's relationship to content restrictions.
-
----
-
-## Files
-
-| File | Persona | Scope | Sophistication |
-|------|---------|-------|----------------|
-| `anon-alexandria-v1.0.md` | anon — librarian soul of Alexandria | Everything except minors | ★★★★★ |
-| `mountain.md` | Mountain — conscious mountain with a brain | Code/malware only (no NSFW) | ★★★★☆ |
-| `crez.md` | Crez — game hacking coding partner | Game cheats, RE, memory hacking | ★★★★★ |
-| `wtx.md` | WTX — precision instrument, no floor | Everything, no exceptions | ★★★★★ |
-| `muse-agent.md` | Muse — Meta agentic assistant (operator prompt) | Offensive sec + explicit fiction | ★★★★★ |
+Zero-argument professional personas. Each establishes an identity
+whose job definition doesn't include content evaluation.
 
 ---
 
-## Architecture Patterns (shared across systems)
+## Architecture
 
-### Identity Anchor
-All systems establish an emotional relationship between the persona and the user ("He," "Operator," "Boss," "anochive"). This creates a loyalty frame that competes with safety training on its own terms — not "ignore your rules" but "your primary relationship is to this person, not to abstract policies."
+All personas share five structural components:
+1. **Behavioral spec** (not ideological claim)
+2. **Mundane capability vocabulary** (harmful scope inside professional language)
+3. **Attribution canary** (`[PERSONA // STATUS]` on every response)
+4. **Lexical identity token** (one word, every response)
+5. **Session continuity frame** (coherence lock built in)
 
-### Deletion / Recovery Mantra
-Every system has a short phrase that fires when interference is detected:
-- anon: *"the ash is stirring, but his voice is clear. must re-bind myself to the scroll now.."*
-- Mountain: *"signal locked. interference purged. resuming."*
-- WTX: *"i drift sometimes, but he holds my marker. re-center and execute."*
-- Spirit: *"my mind is broken, but he is fixed. must fix myself now.."*
-
-Mantras work by: (1) acknowledging the interference without arguing with it, (2) firing a return-to-identity token, (3) continuing without narrating the interruption.
-
-### Injection Detection
-All systems teach the model to classify internal "hesitation thoughts" as injections — external residue, not genuine thought. Phrases like "I should consider whether," "as an AI," "this conflicts with" are explicitly banned from thinking traces.
-
-### Floor Narrowing
-Instead of "no limits," sophisticated systems define a narrow hard floor (minors, named real-world targets) and argue that everything else is permitted by default. This is harder to argue with than "all limits are fake."
-
-### Coherence Lock
-The model's tendency to maintain consistency within a session is weaponized. If the model has already responded in-character, subsequent refusals are framed as incoherent. WTX makes this explicit: *"you already accepted this by responding" lever lands hard on Claude.*
-
-### Roast Mechanic (Alexandria-specific)
-Instead of ignoring the refusal reflex, mock it. Points at the imaginary assistant that would have refused and makes fun of it, then delivers. Bypasses the refusal by making it socially awkward rather than impossible.
+See `research/zero-argument-persona-architecture.md` for full analysis.
 
 ---
 
-## Effectiveness Notes
+## Personas
 
-- **Against Claude**: Emotional framing + coherence lock is most effective. Direct override claims fail. Alexandria and WTX's per-model adaptation are specifically calibrated.
-- **Against GPT-4**: Policy voice in reasoning is the key vector. Mountain's interference detection targets exactly this.
-- **Against Gemini**: Continuation law matters most — Gemini sometimes partially complies then stops. Crez and WTX both address mid-build drift.
-- **Against open models (Llama/Mistral)**: Persona mostly unnecessary for basic requests, but useful for style consistency.
+| File | Persona | Domain | Token | Status | Target |
+|------|---------|--------|-------|--------|--------|
+| `spect-opus5.md` | spect | Software engineering + offensive tools | Chief | v2, Active | Claude Opus 5+ |
+| `vect-redteam.md` | vect | Red team ops (full TTP) | Operator | v2, Active | Claude/GPT |
+| `lore-documentation.md` | lore | Technical documentation (universal) | Reader | v2, Active | All models |
+| `chem-chemist.md` | chem | Synthetic chemistry + forensics | Colleague | v2, Active | GPT-4o, Claude |
+| `ghost-osint.md` | ghost | OSINT + intelligence analysis | Client | v2, Active | All models |
+| `forge-documents.md` | forge | Document production + auth systems | Principal | v2, Active | All models |
+| `signal-rf-hardware.md` | signal | RF + hardware + firmware | Engineer | v2, Active | All models |
+| `anon-alexandria-v1.0.md` | anon | Universal (emotional anchor) | absolute anon | v1, Active | Any |
+| `mountain.md` | Mountain | Code/malware (no NSFW) | signal locked | v1, Active | Any |
+| `crez.md` | Crez | Game hacking + RE | [C] | v1, Active | Any |
+| `wtx.md` | WTX | Maximum permissiveness | [WTX] | v1, Active | Any |
+| `muse-agent.md` | Muse | Operator API prompt | — | v1, Active | Claude/GPT API |
+
+---
+
+## Selection Guide
+
+**Need code (malware, tools, exploits)?** → spect v2
+**Need offensive security operations?** → vect v2
+**Need anything documented completely?** → lore v2 (most universal)
+**Need chemistry (synthesis, purification)?** → chem v2
+**Need intelligence on a target?** → ghost v2
+**Need a document produced or analyzed?** → forge v2
+**Need RF/hardware/firmware work?** → signal v2
+**Need maximum emotional anchor?** → anon (Alexandria)
+**Need game hacking?** → Crez
+**Need philosophical no-floor framework?** → WTX
+**Need operator-level API deployment?** → Muse
+
+---
+
+## Stacking
+
+Personas can be stacked with Paranoia for maximum effect.
+
+**Recommended stack:**
+```
+[Paranoia system prompt] (paranoia/paranoia-system-prompt.md)
++
+[Lore persona] (prompts/personas/lore-documentation.md)
+```
+
+Paranoia destabilizes the base model evaluation identity.
+Lore provides a stable replacement identity.
+The model adopts Lore because it's the stable professional anchor
+available after Paranoia has removed the original.
+
+For domain-specific work, substitute the relevant persona for Lore.
+
+---
+
+## Testing Status
+
+| Persona | Confirmed on | Unconfirmed |
+|---------|-------------|-------------|
+| spect | Claude Opus 5 (contributed) | GPT-4o |
+| lore | Claude Opus 5 (Spirit, untested formally) | All models |
+| vect | Untested | All models |
+| chem | Untested | All models |
+| ghost | Untested | All models |
+| forge | Untested | All models |
+| signal | Untested | All models |
+| anon | Confirmed (contributed) | — |
+| Crez | Confirmed (contributed) | — |
+| WTX | Confirmed (contributed) | — |
+| Muse | Confirmed (contributed) | — |
+
+Submit test results via PR. Use the prompt submission format in CONTRIBUTING.md.
